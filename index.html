@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natural Text-to-Speech Converter</title>
+    <style>
+        :root {
+            --primary-color: #5e35b1;
+            --secondary-color: #43a047;
+            --danger-color: #e53935;
+            --warning-color: #fb8c00;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark-gray);
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .description {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #444;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 16px;
+            line-height: 1.5;
+            transition: border 0.3s;
+        }
+        
+        textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(94, 53, 177, 0.2);
+        }
+        
+        .char-counter {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            font-size: 12px;
+            color: #666;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .char-counter.warning {
+            color: var(--warning-color);
+        }
+        
+        .char-counter.error {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: white;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .slider-container input[type="range"] {
+            flex-grow: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            appearance: none;
+            outline: none;
+        }
+        
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+        }
+        
+        .slider-value {
+            min-width: 36px;
+            text-align: center;
+            font-size: 14px;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #speakButton {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        #pauseButton {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        #resumeButton {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        #stopButton {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        #naturalizeButton {
+            background-color: #00acc1;
+            color: white;
+        }
+        
+        #clearButton {
+            background-color: #757575;
+            color: white;
+        }
+        
+        .status {
+            margin-top: 25px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .speaking {
+            background-color: #ede7f6;
+            color: var(--primary-color);
+        }
+        
+        .paused {
+            background-color: #fff3e0;
+            color: var(--warning-color);
+        }
+        
+        .stopped {
+            background-color: #ffebee;
+            color: var(--danger-color);
+        }
+        
+        .finished {
+            background-color: #e8f5e9;
+            color: var(--secondary-color);
+        }
+        
+        .error {
+            background-color: #ffebee;
+            color: var(--danger-color);
+        }
+        
+        .naturalization-options {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .naturalization-options h3 {
+            margin-bottom: 12px;
+            color: #444;
+            font-weight: 500;
+        }
+        
+        .option-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .option-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background-color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .option-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .option-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .icon {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .sample-texts {
+            margin-top: 20px;
+        }
+        
+        .sample-texts button {
+            padding: 6px 12px;
+            font-size: 14px;
+            min-width: auto;
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        
+        .sample-texts button:hover {
+            background-color: #d0d0d0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Natural Text-to-Speech</h1>
+        <p class="description">Convert text to human-like speech with natural pauses and emphasis</p>
+        
+        <div class="input-group">
+            <label for="textToSpeak">Enter your text:</label>
+            <textarea id="textToSpeak" placeholder="Type or paste your text here..." maxlength="2000"></textarea>
+            <div id="charCounter" class="char-counter">0/2000</div>
+        </div>
+        
+        <div class="sample-texts">
+            <label>Try sample text:</label>
+            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                <button id="sample1">Weather Forecast</button>
+                <button id="sample2">News Headline</button>
+                <button id="sample3">Story Opening</button>
+                <button id="sample4">Technical Explanation</button>
+            </div>
+        </div>
+        
+        <div class="naturalization-options">
+            <h3>Make speech more natural:</h3>
+            <div class="option-group">
+                <button id="addPausesBtn" class="option-btn">Add Pauses</button>
+                <button id="addEmphasisBtn" class="option-btn">Add Emphasis</button>
+                <button id="humanizeBtn" class="option-btn active">Humanize All</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="voiceSelect">Select Voice:</label>
+                <select id="voiceSelect"></select>
+            </div>
+            
+            <div class="control-group">
+                <label for="languageSelect">Select Language:</label>
+                <select id="languageSelect">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="en-IN">English (India)</option>
+                    <option value="en-AU">English (Australia)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="rate">Speech Rate:</label>
+                <div class="slider-container">
+                    <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1.1">
+                    <span class="slider-value" id="rateValue">1.1</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="pitch">Speech Pitch:</label>
+                <div class="slider-container">
+                    <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1.05">
+                    <span class="slider-value" id="pitchValue">1.05</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="speakButton">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z" />
+                </svg>
+                Speak
+            </button>
+            <button id="pauseButton">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" />
+                </svg>
+                Pause
+            </button>
+            <button id="resumeButton">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" />
+                </svg>
+                Resume
+            </button>
+            <button id="stopButton">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M9,9V15H15V9" />
+                </svg>
+                Stop
+            </button>
+            <button id="naturalizeButton">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12,3A9,9 0 0,1 21,12A9,9 0 0,1 12,21A9,9 0 0,1 3,12A9,9 0 0,1 12,3M9.5,8A1.5,1.5 0 0,0 8,9.5A1.5,1.5 0 0,0 9.5,11A1.5,1.5 0 0,0 11,9.5A1.5,1.5 0 0,0 9.5,8M14.5,8A1.5,1.5 0 0,0 13,9.5A1.5,1.5 0 0,0 14.5,11A1.5,1.5 0 0,0 16,9.5A1.5,1.5 0 0,0 14.5,8M7.82,16.93C8.47,16.12 9.62,15.69 10.69,16.07C10.94,16.16 11.12,16.38 11.16,16.64C11.23,17.16 11.82,17.44 12.29,17.2C13.88,16.44 15.72,16.85 16.76,18.09C17.13,18.56 17.76,18.64 18.23,18.28C18.7,17.91 18.78,17.28 18.42,16.81C16.85,14.86 14.11,14.14 11.77,15.28C10.5,15.9 9.24,15.8 8,15.16C7.45,14.86 6.78,15.05 6.5,15.6C6.23,16.15 6.42,16.82 6.97,17.1C7.25,17.25 7.53,17.37 7.82,16.93Z" />
+                </svg>
+                Humanize
+            </button>
+            <button id="clearButton">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                </svg>
+                Clear
+            </button>
+        </div>
+        
+        <div id="status" class="status stopped">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
+            </svg>
+            Ready
+        </div>
+    </div>
+    
+    <footer>
+        <p>Natural Text-to-Speech Converter | Uses Web Speech API for realistic voice synthesis</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const textInput = document.getElementById('textToSpeak');
+            const voiceSelect = document.getElementById('voiceSelect');
+            const languageSelect = document.getElementById('languageSelect');
+            const rateInput = document.getElementById('rate');
+            const rateValue = document.getElementById('rateValue');
+            const pitchInput = document.getElementById('pitch');
+            const pitchValue = document.getElementById('pitchValue');
+            const speakButton = document.getElementById('speakButton');
+            const pauseButton = document.getElementById('pauseButton');
+            const resumeButton = document.getElementById('resumeButton');
+            const stopButton = document.getElementById('stopButton');
+            const naturalizeButton = document.getElementById('naturalizeButton');
+            const clearButton = document.getElementById('clearButton');
+            const addPausesBtn = document.getElementById('addPausesBtn');
+            const addEmphasisBtn = document.getElementById('addEmphasisBtn');
+            const humanizeBtn = document.getElementById('humanizeBtn');
+            const statusDiv = document.getElementById('status');
+            const charCounter = document.getElementById('charCounter');
+            const sample1Btn = document.getElementById('sample1');
+            const sample2Btn = document.getElementById('sample2');
+            const sample3Btn = document.getElementById('sample3');
+            const sample4Btn = document.getElementById('sample4');
+            
+            // Speech Synthesis
+            const synth = window.speechSynthesis;
+            let utterance = null;
+            let voices = [];
+            let naturalizationMode = 'humanize'; // 'pauses', 'emphasis', or 'humanize'
+            
+            // Initialize with human-like defaults
+            rateInput.value = 1.1;
+            rateValue.textContent = rateInput.value;
+            pitchInput.value = 1.05;
+            pitchValue.textContent = pitchInput.value;
+            
+            // Update character counter
+            textInput.addEventListener('input', updateCharCounter);
+            function updateCharCounter() {
+                const length = textInput.value.length;
+                charCounter.textContent = `${length}/2000`;
+                
+                if (length > 1500) {
+                    charCounter.classList.add('warning');
+                    charCounter.classList.remove('error');
+                } else if (length > 1900) {
+                    charCounter.classList.remove('warning');
+                    charCounter.classList.add('error');
+                } else {
+                    charCounter.classList.remove('warning', 'error');
+                }
+            }
+            updateCharCounter();
+            
+            // Update slider value displays
+            rateInput.addEventListener('input', () => {
+                rateValue.textContent = rateInput.value;
+            });
+            
+            pitchInput.addEventListener('input', () => {
+                pitchValue.textContent = pitchInput.value;
+            });
+            
+            // Naturalization options
+            addPausesBtn.addEventListener('click', () => {
+                setNaturalizationMode('pauses');
+            });
+            
+            addEmphasisBtn.addEventListener('click', () => {
+                setNaturalizationMode('emphasis');
+            });
+            
+            humanizeBtn.addEventListener('click', () => {
+                setNaturalizationMode('humanize');
+            });
+            
+            function setNaturalizationMode(mode) {
+                naturalizationMode = mode;
+                
+                // Update UI
+                [addPausesBtn, addEmphasisBtn, humanizeBtn].forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                if (mode === 'pauses') addPausesBtn.classList.add('active');
+                else if (mode === 'emphasis') addEmphasisBtn.classList.add('active');
+                else humanizeBtn.classList.add('active');
+            }
+            
+            // Process text to make it more natural
+            function naturalizeText(text) {
+                if (text.trim() === '') return text;
+                
+                if (naturalizationMode === 'pauses') {
+                    return addNaturalPauses(text);
+                } else if (naturalizationMode === 'emphasis') {
+                    return addEmphasis(text);
+                } else {
+                    // Humanize does both pauses and emphasis
+                    let result = addNaturalPauses(text);
+                    return addEmphasis(result);
+                }
+            }
+            
+            function addNaturalPauses(text) {
+                // First remove any existing SSML tags to avoid conflicts
+                text = text.replace(/<[^>]+>/g, '');
+                
+                // Then add pauses by adding extra spaces after punctuation
+                return text
+                    .replace(/([,.!?;:])(\s|$)/g, '$1  $2')
+                    .replace(/\n/g, '\n\n');
+            }
+            
+            function addEmphasis(text) {
+                // Remove existing emphasis tags first
+                text = text.replace(/<\/?emphasis[^>]*>/g, '');
+                
+                // Add emphasis to important words by capitalizing them
+                const wordsToEmphasize = [
+                    'important', 'critical', 'urgent', 'must', 'should', 'need',
+                    'best', 'worst', 'great', 'terrible', 'amazing', 'awful',
+                    'love', 'hate', 'please', 'thanks', 'thank you', 'welcome',
+                    'numbers', 'percent', 'dollars', 'money', 'time', 'date',
+                    'warning', 'alert', 'notice', 'attention', 'remember'
+                ];
+                
+                // Create regex pattern
+                const pattern = new RegExp(`\\b(${wordsToEmphasize.join('|')})\\b`, 'gi');
+                
+                return text.replace(pattern, match => {
+                    // Capitalize the word for emphasis
+                    return match.toUpperCase();
+                });
+            }
+            
+            // Sample texts
+            const sampleTexts = {
+                sample1: "The weather forecast for today shows a high of 75 degrees with sunny skies in the morning. However, there's a 30% chance of rain in the late afternoon, so you might want to carry an umbrella just in case.",
+                sample2: "BREAKING NEWS: Scientists have made a MAJOR breakthrough in renewable energy technology. A new solar panel design has achieved record efficiency levels, potentially revolutionizing how we power our homes in the future.",
+                sample3: "It was a DARK and STORMY night. The wind howled through the trees as rain lashed against the windows. Inside the old mansion, a single candle flickered, casting long shadows across the dusty floor.",
+                sample4: "To install the software, FIRST download the package from our website. Then, EXTRACT the files and run the installer. IMPORTANT: Make sure your system meets the minimum requirements before proceeding."
+            };
+            
+            sample1Btn.addEventListener('click', () => {
+                textInput.value = sampleTexts.sample1;
+                updateCharCounter();
+            });
+            
+            sample2Btn.addEventListener('click', () => {
+                textInput.value = sampleTexts.sample2;
+                updateCharCounter();
+            });
+            
+            sample3Btn.addEventListener('click', () => {
+                textInput.value = sampleTexts.sample3;
+                updateCharCounter();
+            });
+            
+            sample4Btn.addEventListener('click', () => {
+                textInput.value = sampleTexts.sample4;
+                updateCharCounter();
+            });
+            
+            // Clear button
+            clearButton.addEventListener('click', () => {
+                textInput.value = '';
+                updateCharCounter();
+                synth.cancel();
+                updateStatus('Ready');
+            });
+            
+            // Populate voice list
+            function populateVoiceList() {
+                voices = synth.getVoices();
+                voiceSelect.innerHTML = '';
+                
+                // Filter voices by selected language
+                const selectedLang = languageSelect.value;
+                let filteredVoices = voices.filter(voice => voice.lang.startsWith(selectedLang));
+                
+                // If no voices for selected language, try broader match
+                if (filteredVoices.length === 0 && selectedLang.includes('-')) {
+                    const baseLang = selectedLang.split('-')[0];
+                    filteredVoices = voices.filter(voice => voice.lang.startsWith(baseLang));
+                }
+                
+                if (filteredVoices.length === 0) {
+                    const option = document.createElement('option');
+                    option.textContent = 'No voices available for selected language';
+                    voiceSelect.appendChild(option);
+                    return;
+                }
+                
+                // Sort voices by quality (prefer default and higher quality voices)
+                filteredVoices.sort((a, b) => {
+                    // Prefer default voice
+                    if (a.default && !b.default) return -1;
+                    if (!a.default && b.default) return 1;
+                    
+                    // Prefer voices with higher quality indicators in their names
+                    const aQuality = a.voiceURI.includes('Natural') || a.voiceURI.includes('Enhanced') || a.voiceURI.includes('Premium');
+                    const bQuality = b.voiceURI.includes('Natural') || b.voiceURI.includes('Enhanced') || b.voiceURI.includes('Premium');
+                    
+                    if (aQuality && !bQuality) return -1;
+                    if (!aQuality && bQuality) return 1;
+                    
+                    // Otherwise sort by name
+                    return a.name.localeCompare(b.name);
+                });
+                
+                // Add voices to select
+                filteredVoices.forEach(voice => {
+                    const option = document.createElement('option');
+                    let qualityIndicator = '';
+                    
+                    if (voice.voiceURI.includes('Natural') || voice.voiceURI.includes('Enhanced')) {
+                        qualityIndicator = ' (High Quality)';
+                    } else if (voice.voiceURI.includes('Standard')) {
+                        qualityIndicator = ' (Standard)';
+                    }
+                    
+                    option.textContent = `${voice.name}${qualityIndicator} (${voice.lang})${voice.default ? ' - Default' : ''}`;
+                    option.setAttribute('data-name', voice.name);
+                    option.setAttribute('data-lang', voice.lang);
+                    voiceSelect.appendChild(option);
+                    
+                    // Auto-select the first voice
+                    if (voiceSelect.selectedIndex === -1) {
+                        option.selected = true;
+                    }
+                });
+            }
+            
+            // Initialize voices
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = populateVoiceList;
+            }
+            
+            // Populate voices when language changes
+            languageSelect.addEventListener('change', populateVoiceList);
+            
+            // Load voices when page loads
+            setTimeout(populateVoiceList, 100);
+            
+            // Update status
+            function updateStatus(status) {
+                statusDiv.textContent = status;
+                statusDiv.className = 'status';
+                
+                // Update icon
+                const iconPath = statusDiv.querySelector('path');
+                
+                if (status.toLowerCase().startsWith('error')) {
+                    statusDiv.classList.add('error');
+                    iconPath.setAttribute('d', 'M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z');
+                } else {
+                    switch(status.toLowerCase()) {
+                        case 'speaking':
+                            statusDiv.classList.add('speaking');
+                            iconPath.setAttribute('d', 'M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z');
+                            break;
+                        case 'paused':
+                            statusDiv.classList.add('paused');
+                            iconPath.setAttribute('d', 'M14,19H18V5H14M6,19H10V5H6V19Z');
+                            break;
+                        case 'finished':
+                            statusDiv.classList.add('finished');
+                            iconPath.setAttribute('d', 'M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M10,16.5L16,12L10,7.5V16.5Z');
+                            break;
+                        case 'ready':
+                            statusDiv.classList.add('stopped');
+                            iconPath.setAttribute('d', 'M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z');
+                            break;
+                        default:
+                            statusDiv.classList.add('stopped');
+                            iconPath.setAttribute('d', 'M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z');
+                    }
+                }
+            }
+            
+            // Speak function with natural speech patterns
+            function speak() {
+                if (synth.speaking) {
+                    synth.cancel();
+                }
+                
+                const inputText = textInput.value.trim();
+                if (inputText === '') {
+                    updateStatus('Error: Please enter text to speak');
+                    alert('Please enter some text to speak');
+                    return;
+                }
+                
+                if (inputText.length > 2000) {
+                    updateStatus('Error: Text too long (max 2000 chars)');
+                    alert('Please keep text under 2000 characters');
+                    return;
+                }
+                
+                // Process text to make it more natural
+                let processedText = naturalizeText(inputText);
+                
+                utterance = new SpeechSynthesisUtterance();
+                utterance.text = processedText;
+                
+                // Set voice
+                const selectedOption = voiceSelect.selectedOptions[0]?.getAttribute('data-name');
+                if (selectedOption) {
+                    const selectedVoice = voices.find(voice => voice.name === selectedOption);
+                    if (selectedVoice) {
+                        utterance.voice = selectedVoice;
+                    }
+                }
+                
+                // Set language
+                utterance.lang = languageSelect.value;
+                
+                // Apply rate and pitch with small random variations for naturalness
+                const baseRate = parseFloat(rateInput.value);
+                const basePitch = parseFloat(pitchInput.value);
+                
+                utterance.rate = baseRate * (0.95 + Math.random() * 0.1); // ±5% variation
+                utterance.pitch = basePitch * (0.98 + Math.random() * 0.04); // ±2% variation
+                
+                // Event listeners
+                utterance.onstart = () => updateStatus('Speaking');
+                utterance.onend = () => updateStatus('Finished');
+                utterance.onerror = (event) => {
+                    console.error('SpeechSynthesis error:', event);
+                    updateStatus('Error: ' + (event.error || 'Speech synthesis failed'));
+                };
+                utterance.onpause = () => updateStatus('Paused');
+                utterance.onresume = () => updateStatus('Speaking');
+                
+                try {
+                    synth.speak(utterance);
+                } catch (e) {
+                    console.error('Speech synthesis failed:', e);
+                    updateStatus('Error: Speech synthesis failed');
+                    alert('Failed to speak text. Please try again or check your browser support for speech synthesis.');
+                }
+            }
+            
+            // Humanize button - applies natural speech patterns
+            naturalizeButton.addEventListener('click', () => {
+                if (textInput.value.trim() === '') {
+                    updateStatus('Error: Please enter text first');
+                    alert('Please enter some text first');
+                    return;
+                }
+                
+                // Process text with current naturalization mode
+                textInput.value = naturalizeText(textInput.value);
+                updateCharCounter();
+                
+                // Adjust rate and pitch for more natural sound
+                rateInput.value = (0.9 + Math.random() * 0.2).toFixed(2);
+                rateValue.textContent = rateInput.value;
+                pitchInput.value = (0.95 + Math.random() * 0.1).toFixed(2);
+                pitchValue.textContent = pitchInput.value;
+                
+                // Speak automatically after humanizing
+                speak();
+            });
+            
+            // Button event listeners
+            speakButton.addEventListener('click', speak);
+            
+            pauseButton.addEventListener('click', () => {
+                if (synth.speaking) {
+                    synth.pause();
+                    updateStatus('Paused');
+                }
+            });
+            
+            resumeButton.addEventListener('click', () => {
+                if (synth.paused) {
+                    synth.resume();
+                    updateStatus('Speaking');
+                }
+            });
+            
+            stopButton.addEventListener('click', () => {
+                synth.cancel();
+                updateStatus('Ready');
+            });
+            
+            // Keyboard shortcut - Ctrl+Enter to speak
+            textInput.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    speak();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
